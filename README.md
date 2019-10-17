@@ -82,4 +82,47 @@ Finished constructing derecho group.
 Press ENTER to stop.
 ```
 
-Now, let's start the clients ...
+Now, let's open another terminal and change directory to `test/client` folder. This folder contains a configuration file and a pre-trained flower identification model from MXNet's [example](https://mxnet.apache.org/api/python/docs/tutorials/getting-started/gluon_from_experiment_to_deployment.html). 
+
+Unpack the pre-trained model:
+```
+$ tar -jxf flower-model.tar.bz2
+$ ls flower-model
+flower-recognition-0040.params  pic0.ndarray  pic101.ndarray  pic32.ndarray  pic86.ndarray  pic98.ndarray
+flower-recognition-symbol.json  pic1.ndarray  pic23.ndarray   pic78.ndarray  pic91.ndarray  synset.txt
+```
+File `flower-recognition-symbol.json` contains the `ResNet50 V2` model. File `flower-recognition-0040.params` contains the parameters for the model to identify 102 types of flowers. File `synset.txt` contains the name of the 102 flowers, in the order corresponding to the output layer of the model. Files with name 'picx.ndarray' are flower pictures converted into ndarray format.
+
+Since the service we just started does not contain any model at the beginning, let's install the flower model by issuing the following command in the client terminal:
+```
+$ ../../build/src/sospdemo
+Usage:../../build/src/sospdemo <mode> <mode specific args>
+The mode could be one of the following:
+    client - the web client.
+    server - the server node. Configuration file determines if this is a categorizer tier node or a function tier server. 
+1) to start a server node:
+    ../../build/src/sospdemo server 
+2) to perform inference: 
+    ../../build/src/sospdemo client inference <tags> <photo>
+    tags could be a single tag or multiple tags like 1,2,3,...
+3) to install a model: 
+    ../../build/src/sospdemo client installmodel <tag> <synset> <symbol> <params>
+4) to remove a model: 
+    ../../build/src/sospdemo client removemodel <tag>
+$ ../../build/src/sospdemo client installmodel 1 flower-model/synset.txt flower-model/flower-recognition-symbol.json flower-model/flower-recognition-0040.params 
+Use function tier node: 127.0.0.1:28001
+return code:0
+description:install model successfully.
+```
+Please note that it's up to the user which tag to assign to a model.
+
+Now, we can do the inference as following:
+```
+$ ../../build/src/sospdemo client inference 1 pic91.ndarray
+Use function tier node: 127.0.0.1:28001
+photo description:tiger lily
+
+```
+
+## Explanation on the code
+TODO.
