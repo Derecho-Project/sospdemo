@@ -53,8 +53,33 @@ Please note that you need to use the same cmake build mode(`Debug` or `Release`)
 ```
 $ cmake -DCMAKE_BUILD_TYPE=Debug ..
 $ make -j `nproc`
+$ cd ..
 ```
 Then, you should see the binary `build/src/sospdemo` is built. This binary includes both the client and server.
 
 ## Run the demo
-We pre-deployed a demo setup with four Derecho nodes (two function tier nodes and two categorizer tier nodes). The folder `test/n0` to `test/n3` contains the configuration for node 0-3. 
+We pre-deployed a demo setup with four Derecho nodes (two function tier nodes and two categorizer tier nodes) running on your local host. The folder `test/n0` to `test/n3` contains the configuration for node id 0~3 respectively. Let's start open four command line terminals and `cd` to each of those configuration folders (Tip: `tmux` or `screen` helps a lot). To start the service, run the following command in each of the terminals:
+```
+$ ../build/src/sospdemo server
+```
+This command will start a derecho node in either the function or the categorizer tier, depending on the configuration. Once all nodes started, the group is active and you should see the following outputs.
+
+A function tier node:
+```
+$ ../../build/src/sospdemo server
+[14:53:34.318270] [derecho_debug] [Thread 006855] [info] Derecho library running version 0.9.1 + 159 commits
+function tier nodes = 0:127.0.0.1:28001,1:127.0.0.1:28002
+server_address=127.0.0.1:28001
+FunctionTier listening on 127.0.0.1:28001
+Finished constructing derecho group.
+Press ENTER to stop.
+```
+A categorizer tier node:
+```
+$ ../../build/src/sospdemo server
+[14:53:38.882686] [derecho_debug] [Thread 006927] [info] Derecho library running version 0.9.1 + 159 commits
+Finished constructing derecho group.
+Press ENTER to stop.
+```
+
+Now, let's start the clients ...
