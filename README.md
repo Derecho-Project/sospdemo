@@ -45,6 +45,8 @@ $ cd ..
 ## Build
 Once you have all the prerequisite built, building the demo is straight-forward.
 ```
+$ [sudo] apt install -y git-lfs
+$ git lfs install
 $ git clone https://github.com/Derecho-Project/sospdemo
 $ cd sospdemo
 $ mkdir build;cd build
