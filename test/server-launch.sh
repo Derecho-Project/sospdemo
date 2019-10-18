@@ -4,12 +4,13 @@ if [[ -d ../../test ]]; then
     if [[ -d ../n1 ]]; then
 	if [[ -f derecho.cfg ]]; then
 	    num=`pwd | rev | cut -dn -f1`
-	    taskset_num=$[num%2 + 1]
+	    taskset_num=$[num%2 *2 ]
 	    echo "Node" $num "using core" $taskset_num
 	    if [[ -d ../../build ]]; then
 		if [[ -d ../../build/CMakeFiles ]]; then
 		    if [[ -f ../../build/src/sospdemo ]]; then
-			taskset $taskset_num ../../build/src/sospdemo server
+			echo "executing 'taskset --cpu-list $taskset_num ../../build/src/sospdemo server'"
+			taskset --cpu-list $taskset_num ../../build/src/sospdemo server
 		    else
 			echo "Error: you do not appear to have built the demo yet!"
 		    fi
