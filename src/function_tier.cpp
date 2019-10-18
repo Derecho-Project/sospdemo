@@ -22,38 +22,19 @@ namespace sospdemo {
             return;
         }
         // get the function tier server addresses
-        const std::string function_tier_string = derecho::getConfString("SOSPDEMO/function_tier");
-        std::cout << "function tier nodes = " << function_tier_string << std::endl;
-        std::vector<function_tier_node_t> function_tier_list = parse_function_tier_list(function_tier_string);
         node_id_t my_id = derecho::getConfUInt32(CONF_DERECHO_LOCAL_ID);
-
-        std::string server_address;
-        for (auto& fi: function_tier_list) {
-            if (fi.id == my_id){
-                server_address = fi.ip_and_port;
-                break;
-            }
-        }
-
-        if (server_address.size() == 0) {
-            std::cerr << "Failed to find function tier ip and port for my_id:" << my_id 
-                << ". function tier list= " << function_tier_string << std::endl;
-        }
-
-        std::cout << "server_address=" << server_address << std::endl;
-
-        // get the categorizer tier node ids
-        categorizers = parse_node_list(derecho::getConfString("SOSPDEMO/categorizer_tier"));
+        const uint32_t port = FUNCTION_TIER_GRPC_PORT_BASE + my_id; 
+        std::string grpc_service_address = derecho::getConfString(CONF_DERECHO_LOCAL_IP) + ":" + std::to_string(port);
 
         // now, start the server
         ServerBuilder builder;
-        builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+        builder.AddListeningPort(grpc_service_address, grpc::InsecureServerCredentials());
         builder.RegisterService(this);
         this->server = std::unique_ptr(builder.BuildAndStart());
         // print messages
-#ifndef NDEBUG
-        std::cout << "FunctionTier listening on " << server_address << std::endl;
-#endif
+        std::cout << "//////////////////////////////////////////" << std::endl;
+        std::cout << "FunctionTier listening on " << grpc_service_address << std::endl;
+        std::cout << "//////////////////////////////////////////" << std::endl;
     }
 
     Status FunctionTier::Whatsthis(ServerContext* context, 
@@ -121,10 +102,12 @@ namespace sospdemo {
 
         // 2 - pass it to the categorizer tier.
         derecho::ExternalCaller<CategorizerTier>& categorizer_tier_handler = group->get_nonmember_subgroup<CategorizerTier>();
-        node_id_t target = categorizers[0]; //TODO: add randomness for load-balancing.
+        auto shards = group->get_subgroup_members<CategorizerTier>();
+        node_id_t target = shards[tag % shards.size()][0]; //TODO: add randomness for load-balancing.
 
 #ifndef NDEBUG
-        std::cout << "get the handle of categorizer subgroup. external caller is valid:" << categorizer_tier_handler.is_valid() << std::endl;
+        std::cout << "get the handle of categorizer tier subgroup. external caller is valid:" << categorizer_tier_handler.is_valid() << std::endl;
+        std::cout << "p2p_send using target = " <<  target << std::endl;
         std::cout.flush();
 #endif
 
@@ -212,10 +195,12 @@ namespace sospdemo {
         // 2 - find the shard
         // Currently, we use the one-shard implementation.
         derecho::ExternalCaller<CategorizerTier>& categorizer_tier_handler = group->get_nonmember_subgroup<CategorizerTier>();
-        node_id_t target = categorizers[0]; //TODO: add randomness for load-balancing.
+        auto shards = group->get_subgroup_members<CategorizerTier>();
+        node_id_t target = shards[tag % shards.size()][0]; //TODO: add randomness for load-balancing.
 
 #ifndef NDEBUG
         std::cout << "get the handle of categorizer tier subgroup. external caller is valid:" << categorizer_tier_handler.is_valid() << std::endl;
+        std::cout << "p2p_send using target = " <<  target << std::endl;
         std::cout.flush();
 #endif
 
@@ -259,7 +244,13 @@ namespace sospdemo {
         // 2 - find the shard
         // currently, we use the one-shard implementation.
         derecho::ExternalCaller<CategorizerTier>& categorizer_tier_handler = group->get_nonmember_subgroup<CategorizerTier>();
-        node_id_t target = categorizers[0]; // TODO: add randomness for load-balancing.
+        auto shards = group->get_subgroup_members<CategorizerTier>();
+        node_id_t target = shards[tag % shards.size()][0]; //TODO: add randomness for load-balancing.
+#ifndef NDEBUG
+        std::cout << "get the handle of categorizer tier subgroup. external caller is valid:" << categorizer_tier_handler.is_valid() << std::endl;
+        std::cout << "p2p_send using target = " <<  target << std::endl;
+        std::cout.flush();
+#endif
 
         // 3 - post it to the categorizer tier
         derecho::rpc::QueryResults<int> result = 

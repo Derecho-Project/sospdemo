@@ -8,6 +8,8 @@
 
 namespace sospdemo {
 
+#define FUNCTION_TIER_GRPC_PORT_BASE (28000)
+
 /**
  * The front end subgroup type
  * The front end subgroup type does nothing since it provides no service to

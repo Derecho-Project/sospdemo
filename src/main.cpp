@@ -25,19 +25,14 @@ static void print_help(const char* cmd) {
         << "1) to start a server node:\n"
         << "    " << cmd << " server \n"
         << "2) to perform inference: \n"
-        << "    " << cmd << " client inference <tags> <photo>\n"
+        << "    " << cmd << " client <function-tier-node> inference <tags> <photo>\n"
         << "    tags could be a single tag or multiple tags like 1,2,3,...\n"
         << "3) to install a model: \n"
-        << "    " << cmd << " client installmodel <tag> <synset> <symbol> <params>\n"
+        << "    " << cmd << " client <function-tier-node> installmodel <tag> <synset> <symbol> <params>\n"
         << "4) to remove a model: \n"
-        << "    " << cmd << " client removemodel <tag>"
+        << "    " << cmd << " client <function-tier-node> removemodel <tag>"
         << std::endl;
 }
-
-#define CONF_SOSPDEMO_FUNCTION_TIER_LIST "SOSPDEMO/function_tier"
-#define CONF_SOSPDEMO_MIN_FUNCTION_TIER "SOSPDEMO/min_function_tier"
-#define CONF_SOSPDEMO_CATEGORIZER_TIER_LIST  "SOSPDEMO/categorizer_tier"
-#define CONF_SOSPDEMO_MIN_CATEGORIZER_TIER   "SOSPDEMO/min_categorizer_tier"
 
 /**
  * client sends request to server node.
@@ -290,7 +285,7 @@ void client_remove_model(std::unique_ptr<sospdemo::FunctionTierService::Stub>& s
 
 void do_client(int argc, char** argv) {
     // briefly check the arguments
-    if (argc < 3 || std::string("client").compare(argv[1])) {
+    if (argc < 4 || std::string("client").compare(argv[1])) {
         std::cerr << "Invalid command." << std::endl;
         print_help(argv[0]);
         return;
@@ -298,50 +293,44 @@ void do_client(int argc, char** argv) {
 
     // load sospdemo configuration
     derecho::Conf::initialize(argc,argv);
-    auto function_tier_nodes = parse_function_tier_list(derecho::getConfString(CONF_SOSPDEMO_FUNCTION_TIER_LIST));
-
-    if (function_tier_nodes.size() == 0) {
-        std::cerr << "no function tier node is found in configuration file...exit." << std::endl;
-        return;
-    }
-    std::string function_tier_node = function_tier_nodes[0].ip_and_port;
+    std::string function_tier_node(argv[2]); // pick this from registry
     std::cout << "Use function tier node: " << function_tier_node << std::endl;
 
     // prepare gRPC client
     std::unique_ptr<sospdemo::FunctionTierService::Stub> stub_(sospdemo::FunctionTierService::NewStub(
-        grpc::CreateChannel(function_tier_nodes[0].ip_and_port,grpc::InsecureChannelCredentials())));
+        grpc::CreateChannel(function_tier_node,grpc::InsecureChannelCredentials())));
 
     // parse the command
-    if (std::string("inference").compare(argv[2]) == 0) {
+    if (std::string("inference").compare(argv[3]) == 0) {
 
-        if (argc < 5) {
+        if (argc < 6) {
             std::cerr << "invalid inference command." << std::endl;
             print_help(argv[0]);
         } else {
-            std::string photo_file(argv[4]);
-            client_inference(stub_,std::string(argv[3]),photo_file);
+            std::string photo_file(argv[5]);
+            client_inference(stub_,std::string(argv[4]),photo_file);
         }
-    } else if (std::string("installmodel").compare(argv[2]) == 0) {
-        if (argc < 7) {
+    } else if (std::string("installmodel").compare(argv[3]) == 0) {
+        if (argc < 8) {
             std::cerr << "invalid install model command." << std::endl;
             print_help(argv[0]);
         } else {
-            uint32_t tag = static_cast<uint32_t>(std::atoi(argv[3]));
-            std::string synset_file(argv[4]);
-            std::string symbol_file(argv[5]);
-            std::string params_file(argv[6]);
+            uint32_t tag = static_cast<uint32_t>(std::atoi(argv[4]));
+            std::string synset_file(argv[5]);
+            std::string symbol_file(argv[6]);
+            std::string params_file(argv[7]);
             client_install_model(stub_,tag,synset_file,symbol_file,params_file);
         }
-    } else if (std::string("removemodel").compare(argv[2]) == 0) {
-        if (argc < 4) {
+    } else if (std::string("removemodel").compare(argv[3]) == 0) {
+        if (argc < 5) {
             std::cerr << "invalid remove model command." << std::endl;
             print_help(argv[0]);
         } else {
-            uint32_t tag = static_cast<uint32_t>(std::atoi(argv[3]));
+            uint32_t tag = static_cast<uint32_t>(std::atoi(argv[4]));
             client_remove_model(stub_,tag);
         }
     } else {
-        std::cerr << "Invalid client command:" << argv[2] << std::endl;
+        std::cerr << "Invalid client command:" << argv[3] << std::endl;
         print_help(argv[0]);
     }
 }
@@ -354,53 +343,20 @@ void do_client(int argc, char** argv) {
 void do_server(int argc, char** argv) {
     // load configuration
     derecho::Conf::initialize(argc,argv);
-    auto function_tier_nodes = parse_node_list(derecho::getConfString(CONF_SOSPDEMO_FUNCTION_TIER_LIST));
-    auto categorizer_tier_nodes = parse_node_list(derecho::getConfString(CONF_SOSPDEMO_CATEGORIZER_TIER_LIST));
-    uint32_t min_function_tier = derecho::getConfUInt32(CONF_SOSPDEMO_MIN_FUNCTION_TIER);
-    uint32_t min_categorizer_tier = derecho::getConfUInt32(CONF_SOSPDEMO_MIN_CATEGORIZER_TIER);
 
-    // 1 - create subgroup info
-    derecho::SubgroupInfo si {
-        // subgroup allocation callback
-        [function_tier_nodes,categorizer_tier_nodes,min_function_tier,min_categorizer_tier] (
-            const std::vector<std::type_index>& subgroup_type_order, // subgroup types
-            const std::unique_ptr<derecho::View>& prev_view, // previous view
-            derecho::View& curr_view // current view
-        ) {
-            derecho::subgroup_allocation_map_t subgroup_allocation;
-            std::vector<node_id_t> active_function_tier_nodes,active_categorizer_tier_nodes;
-            for (size_t i = 0; i < curr_view.members.size(); i++ ) {
-                const node_id_t id = curr_view.members[i];
-                if (curr_view.failed[i]) {
-                    continue;
-                }
-                else if (std::find(function_tier_nodes.begin(), function_tier_nodes.end(), id) != function_tier_nodes.end()) {
-                    active_function_tier_nodes.push_back(id);
-                }
-                else if (std::find(categorizer_tier_nodes.begin(), categorizer_tier_nodes.end(), id) != categorizer_tier_nodes.end()) {
-                    active_categorizer_tier_nodes.push_back(id);
-                }
-            }
-            if (active_function_tier_nodes.size() < min_function_tier|| active_categorizer_tier_nodes.size() < min_categorizer_tier) {
-                throw derecho::subgroup_provisioning_exception(); // the view is not enough.
-            }
-            // prepare allocation
-            for (const auto& subgroup_type: subgroup_type_order) {
-                if (subgroup_type == std::type_index(typeid(sospdemo::FunctionTier))) {
-                    derecho::subgroup_shard_layout_t subgroup_vector(1);
-                    subgroup_vector[0].emplace_back(curr_view.make_subview(active_function_tier_nodes,derecho::Mode::ORDERED,{},"FUNCTION_TIER"));
-                    curr_view.next_unassigned_rank += active_function_tier_nodes.size();
-                    subgroup_allocation.emplace(subgroup_type, std::move(subgroup_vector));
-                } else { // subgroup type is typeid(sospdemo::CategorizerTier) TODO: enable shard.
-                    derecho::subgroup_shard_layout_t subgroup_vector(1);
-                    subgroup_vector[0].emplace_back(curr_view.make_subview(active_categorizer_tier_nodes,derecho::Mode::ORDERED,{},"CATEGORIZER_TIER"));
-                    curr_view.next_unassigned_rank += active_categorizer_tier_nodes.size();
-                    subgroup_allocation.emplace(subgroup_type, std::move(subgroup_vector));
-                }
-            }
-            return subgroup_allocation;
+    // 1 - create subgroup info using the default subgroup allocator function
+    // Both the function tier and the categorizer tier subgroups have one shard, 
+    // with two members in each shard,respectively.
+    derecho::SubgroupInfo si {derecho::DefaultSubgroupAllocator({
+        {
+            std::type_index(typeid(sospdemo::FunctionTier)),
+            derecho::one_subgroup_policy(derecho::custom_shards_policy({2},{2},{derecho::Mode::UNORDERED},{"FUNCTION_TIER"}))
+        },
+        {
+            std::type_index(typeid(sospdemo::CategorizerTier)),
+            derecho::one_subgroup_policy(derecho::custom_shards_policy({2},{2},{derecho::Mode::ORDERED},{"CATEGORIZER_TIER"}))
         }
-    };
+    })};
 
     // 2 - prepare factories
     auto function_tier_factory = [](persistent::PersistentRegistry*){return std::make_unique<sospdemo::FunctionTier>();};

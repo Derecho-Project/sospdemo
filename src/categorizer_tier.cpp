@@ -133,6 +133,10 @@ namespace sospdemo {
     }
 
     int CategorizerTier::install_model(const uint32_t& tag,const ssize_t& synset_size,const ssize_t& symbol_size,const ssize_t& params_size,const BlobWrapper& model_data) {
+#ifndef DEBUG
+        std::cout << "CategorizerTier::install_model() is called with tag=" << tag << std::endl;
+        std::cout.flush();
+#endif
         int ret = 0;
         auto& subgroup_handler = group->template get_subgroup<CategorizerTier>();
         // pass it to all replicas
