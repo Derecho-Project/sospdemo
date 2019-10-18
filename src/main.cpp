@@ -336,10 +336,15 @@ void do_client(int argc, char** argv) {
 }
 
 
+#define CONF_SOSPDEMO_FUNCTION_TIER_MIN_NODES "SOSPDEMO/function_tier_min_nodes"
+#define CONF_SOSPDEMO_FUNCTION_TIER_MAX_NODES "SOSPDEMO/function_tier_max_nodes"
+#define CONF_SOSPDEMO_CATEGORIZER_TIER_NUM_SHARD "SOSPDEMO/categorizer_tier_num_shard"
+#define CONF_SOSPDEMO_CATEGORIZER_TIER_MIN_NODES "SOSPDEMO/categorizer_tier_min_nodes"
+#define CONF_SOSPDEMO_CATEGORIZER_TIER_MAX_NODES "SOSPDEMO/categorizer_tier_max_nodes"
+
 /**
  * Start a server node
  */
-
 void do_server(int argc, char** argv) {
     // load configuration
     derecho::Conf::initialize(argc,argv);
@@ -347,14 +352,35 @@ void do_server(int argc, char** argv) {
     // 1 - create subgroup info using the default subgroup allocator function
     // Both the function tier and the categorizer tier subgroups have one shard, 
     // with two members in each shard,respectively.
+    uint32_t function_tier_min_nodes = derecho::getConfUInt32(CONF_SOSPDEMO_FUNCTION_TIER_MIN_NODES);
+    uint32_t function_tier_max_nodes = derecho::getConfUInt32(CONF_SOSPDEMO_FUNCTION_TIER_MAX_NODES);
+    uint32_t categorizer_tier_num_shard = derecho::getConfUInt32(CONF_SOSPDEMO_CATEGORIZER_TIER_NUM_SHARD);
+    uint32_t categorizer_tier_min_nodes = derecho::getConfUInt32(CONF_SOSPDEMO_CATEGORIZER_TIER_MIN_NODES);
+    uint32_t categorizer_tier_max_nodes = derecho::getConfUInt32(CONF_SOSPDEMO_CATEGORIZER_TIER_MAX_NODES);
+
+    std::vector<int> categorizer_tier_min_nodes_by_shard(categorizer_tier_num_shard,static_cast<int>(categorizer_tier_min_nodes));
+    std::vector<int> categorizer_tier_max_nodes_by_shard(categorizer_tier_num_shard,static_cast<int>(categorizer_tier_max_nodes));
+    std::vector<derecho::Mode> categorizer_tier_delivery_modes_by_shard(categorizer_tier_num_shard,derecho::Mode::ORDERED);
+    std::vector<std::string> categorizer_tier_profiles_by_shard(categorizer_tier_num_shard,"CATEGORIZER_TIER");
+
     derecho::SubgroupInfo si {derecho::DefaultSubgroupAllocator({
         {
             std::type_index(typeid(sospdemo::FunctionTier)),
-            derecho::one_subgroup_policy(derecho::custom_shards_policy({2},{2},{derecho::Mode::UNORDERED},{"FUNCTION_TIER"}))
+            derecho::one_subgroup_policy(derecho::custom_shards_policy(
+                {static_cast<int>(function_tier_min_nodes)}, // minimum number of nodes in the single shard of function tier subgroup
+                {static_cast<int>(function_tier_max_nodes)}, // maximum number of nodes in the single shard of function tier subgroup
+                {derecho::Mode::UNORDERED}, // No ordered send required in the function tier subgroup
+                {"FUNCTION_TIER"}) // use the "FUNCTION_TIER" subgroup configuration.
+            )
         },
         {
             std::type_index(typeid(sospdemo::CategorizerTier)),
-            derecho::one_subgroup_policy(derecho::custom_shards_policy({2},{2},{derecho::Mode::ORDERED},{"CATEGORIZER_TIER"}))
+            derecho::one_subgroup_policy(derecho::custom_shards_policy(
+                categorizer_tier_min_nodes_by_shard,
+                categorizer_tier_max_nodes_by_shard,
+                categorizer_tier_delivery_modes_by_shard,
+                categorizer_tier_profiles_by_shard)
+            )
         }
     })};
 
