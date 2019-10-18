@@ -125,7 +125,7 @@ ssize_t file_uploader(const std::string& file, ssize_t length,
 }
 
 /**
- * Send an install model request to a front end node with gRPC.
+ * Send an install model request to a function tier node with gRPC.
  * @param stub_ - gRPC session
  * @param tag - model tag
  * @param synset_file - synset text file name
@@ -199,7 +199,7 @@ void client_install_model(std::unique_ptr<sospdemo::FunctionTierService::Stub>& 
 
 
 /**
- * Send an inference request to a front end node with gRPC.
+ * Send an inference request to a function tier node with gRPC.
  * @param stub_ - gRPC session 
  * @param tag - model tag
  * @param photo_file - photo file name
@@ -259,7 +259,7 @@ void client_inference(std::unique_ptr<sospdemo::FunctionTierService::Stub> &stub
 }
 
 /**
- * Send an remove model request to a front end node with gRPC.
+ * Send an remove model request to a function tier node with gRPC.
  * @param stub_ - gRPC session
  * @param tag - model tag
  */
