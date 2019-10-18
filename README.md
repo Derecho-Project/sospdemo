@@ -22,7 +22,9 @@ $ git submodule update --init
 $ git clean -f -d -x && git submodule foreach --recursive git clean -f -d -x
 $ make -j `$nproc`
 $ [sudo] make install
-$ cd ..
+$ cd third_party/protobuf/
+$ [sudo] make install
+$ cd ../../..
 ```
 
 ### 3. MXNet (TODO: please verify, may have some issues)
