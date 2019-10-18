@@ -41,7 +41,7 @@ $ make install
 $ cd cpp-package
 $ make
 $ make install
-$ cd ..
+$ cd ../..
 ```
 
 ## Build
