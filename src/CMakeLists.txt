@@ -24,6 +24,8 @@ find_package(Protobuf MODULE REQUIRED)
 find_program(GRPC_CPP_PLUGIN grpc_cpp_plugin)
 message(STATUS "Using protobuf ${protobuf_VERSION}")
 
+find_package(OpenCV REQUIRED)
+
 # TODO: cmake system in grpc is incomplete we don't check it for now.
 # find_package(gRPC CONFIG REQUIRED)
 # message(STATUS "Using gRPC ${gRPC_VERSION}")
@@ -63,4 +65,4 @@ target_include_directories(sospdemo PRIVATE
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<BUILD_INTERFACE:${GENERATED_PROTOBUF_PATH}>
 )
-target_link_libraries(sospdemo derecho mutils mxnet fabric pthread protobuf grpc++)
+target_link_libraries(sospdemo derecho mutils mxnet fabric pthread protobuf grpc++ ${OpenCV_LIBS})

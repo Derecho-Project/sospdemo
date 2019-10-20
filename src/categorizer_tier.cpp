@@ -1,4 +1,7 @@
 #include <categorizer_tier.hpp>
+#include <opencv2/opencv.hpp>
+#include <mxnet-cpp/MxNetCpp.h>
+#include <vector>
 #include <utils.hpp>
 
 #ifndef NDEBUG
@@ -79,12 +82,54 @@ namespace sospdemo {
 
     Guess InferenceEngine::inference(const Photo& photo) {
         Guess guess;
-        // Here we assume that the photo is already in NDArray format to feed into the system
-        // TODO: we should be able to accept normal picture format like jpeg and png
-        std::vector<mxnet::cpp::NDArray> photo_ndarray = mxnet::cpp::NDArray::LoadFromBufferToList(
-            static_cast<const void*>(photo.photo_data.bytes),photo.photo_data.size);
-        photo_ndarray[0].CopyTo(&args_map["data"]);
-        mxnet::cpp::NDArray::WaitAll();
+        std::vector<unsigned char> decode_buf(photo.photo_data.size);
+        std::memcpy(
+            static_cast<void*>(decode_buf.data()),
+            static_cast<const void*>(photo.photo_data.bytes),
+            photo.photo_data.size);
+        cv::Mat mat = cv::imdecode(decode_buf, CV_LOAD_IMAGE_COLOR);
+        std::vector<mx_float> array;
+        // transform to fit 3x224x224 input layer
+        cv::resize(mat,mat,cv::Size(256,256));
+        for (int c=0; c<3; c++) { // channels GBR->RGB
+            for (int i=0; i<224; i++) { // height
+                for (int j=0; j<224; j++) { // width
+                    int _i = i + 16;
+                    int _j = j + 16;
+                    array.push_back(static_cast<float>(mat.data[(_i*256 + _j)*3 + (2-c)])/256);
+                }
+            }
+        }
+        // copy to input layer:
+        args_map["data"].SyncCopyFromCPU(array.data(), input_shape.Size());
+        
+/**
+    mxnet::cpp::NDArray image_data = mxnet::cpp::NDArray(shape, global_ctx, false);
+    image_data.SyncCopyFromCPU(array.data(), shape.Size());
+
+    // step four: normalize
+    array.clear();
+    std::vector<mx_float> default_means;
+    default_means.push_back(DEFAULT_MEAN_R);
+    default_means.push_back(DEFAULT_MEAN_G);
+    default_means.push_back(DEFAULT_MEAN_B);
+    for (int c=0; c<3; c++) { // channels
+        for (int i=0; i<224; i++) { // height
+            for (int j=0; j<224; j++) { // width
+                array.push_back(default_means[c]);
+            }
+        }
+    }
+    mxnet::cpp::NDArray mean_image_data = mxnet::cpp::NDArray(shape, global_ctx, false);
+    mean_image_data.SyncCopyFromCPU(array.data(), shape.Size());
+
+    image_data -= mean_image_data;
+**/        
+
+        // std::vector<mxnet::cpp::NDArray> photo_ndarray = mxnet::cpp::NDArray::LoadFromBufferToList(
+        //     static_cast<const void*>(photo.photo_data.bytes),photo.photo_data.size);
+        // photo_ndarray[0].CopyTo(&args_map["data"]);
+        // mxnet::cpp::NDArray::WaitAll();
         this->executor_pointer->Forward(false);
         mxnet::cpp::NDArray::WaitAll();
         // extract the result
