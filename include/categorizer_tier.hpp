@@ -7,6 +7,7 @@
 #include <mxnet/c_api.h>
 #include <mxnet/tuple.h>
 #include <blob.hpp>
+#include <shared_mutex>
 
 namespace sospdemo {
 /**
