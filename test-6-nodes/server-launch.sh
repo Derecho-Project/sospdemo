@@ -1,10 +1,21 @@
 #!/bin/bash
+usable_core_list=()
+total_num_cores=`nproc`
+for ((i=0;i<=${total_num_cores};i++))
+do
+    taskset --cpu-list ${i} test 0 2>/dev/null
+    if [[ $? == 0 ]]; then
+        usable_core_list[${#usable_core_list[@]}]=${i}
+    fi
+done
 
 if [[ -d ../../test ]]; then
     if [[ -d ../n1 ]]; then
 	if [[ -f derecho.cfg ]]; then
 	    num=`pwd | rev | cut -dn -f1`
-	    taskset_num=$[num%6 ]
+	    #taskset_num=$[num%2 *2 ]
+	    taskset_idx=$[num % ${#usable_core_list[@]}]
+        taskset_num=${usable_core_list[$taskset_idx]}
 	    echo "Node" $num "using core" $taskset_num
 	    if [[ -d ../../build ]]; then
 		if [[ -d ../../build/CMakeFiles ]]; then
@@ -27,4 +38,3 @@ if [[ -d ../../test ]]; then
     fi
 fi
 echo "Error: must run from within tutorial node folder (test/n0, test/n1, test/n2, test/n3)"
-
