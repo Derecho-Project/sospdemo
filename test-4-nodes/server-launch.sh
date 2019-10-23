@@ -1,6 +1,6 @@
 #!/bin/bash
 usable_core_list=()
-total_num_cores=`nproc`
+total_num_cores=`nproc --all`
 for ((i=0;i<=${total_num_cores};i++))
 do
     taskset --cpu-list ${i} test 0 2>/dev/null
