@@ -11,7 +11,7 @@ This demo is built with [Derecho](https://github.com/Derecho-Project/derecho/tre
 ### 1. Derecho
 Please follow the installation instruction on [Derecho project page](https://github.com/Derecho-Project/derecho/tree/sospdemo).
 
-### 2. gRPC (TODO: please verify, may have some issues.)
+### 2. gRPC
 We only test it with gRPC v1.20.0, but it should also work with other gRPC versions.
 ```
 $ [sudo] apt install -y libgflags-dev libgtest-dev clang-5.0 libc++-dev build-essential autoconf libtool pkg-config
@@ -26,8 +26,9 @@ $ cd third_party/protobuf/
 $ [sudo] make install
 $ cd ../../..
 ```
+If the about make process crashed, the reason might be gRPC building system is too aggressive. You can use less CPU core than `nproc` reports when you call `make -j`.
 
-### 3. MXNet (TODO: please verify, may have some issues)
+### 3. MXNet
 We use MXNet v1.5.0
 ```
 $ [sudo] apt install -y libopenblas-dev libopencv-dev python
@@ -71,50 +72,54 @@ This command will start a derecho node in either the function or the categorizer
 A function tier node:
 ```
 $ ../../build/src/sospdemo server
-[14:53:34.318270] [derecho_debug] [Thread 006855] [info] Derecho library running version 0.9.1 + 159 commits
-function tier nodes = 0:127.0.0.1:28001,1:127.0.0.1:28002
-server_address=127.0.0.1:28001
-FunctionTier listening on 127.0.0.1:28001
+[22:37:35.915642] [derecho_debug] [Thread 057025] [info] Derecho library running version 0.9.1 + 167 commits
+//////////////////////////////////////////
+FunctionTier listening on 127.0.0.1:28000
+//////////////////////////////////////////
 Finished constructing derecho group.
 Press ENTER to stop.
 ```
 A categorizer tier node:
 ```
 $ ../../build/src/sospdemo server
-[14:53:38.882686] [derecho_debug] [Thread 006927] [info] Derecho library running version 0.9.1 + 159 commits
+[22:37:41.378909] [derecho_debug] [Thread 057039] [info] Derecho library running version 0.9.1 + 167 commits
 Finished constructing derecho group.
 Press ENTER to stop.
 ```
 
-Now, let's open another terminal and change directory to `test/client` folder. This folder contains a configuration file and a pre-trained flower identification model from MXNet's [example](https://mxnet.apache.org/api/python/docs/tutorials/getting-started/gluon_from_experiment_to_deployment.html). 
-
-Unpack the pre-trained model:
+Now, let's open another terminal and change directory to `test/client` folder. Let's download our pre-trained modes. We created those identification models following MXNet's [example](https://mxnet.apache.org/api/python/docs/tutorials/getting-started/gluon_from_experiment_to_deployment.html).
+```
+$ wget -c https://derecho.cs.cornell.edu/files/flower-model.tar.bz2
+$ wget -c https://derecho.cs.cornell.edu/files/pet-model.tar.bz2
+```
+Unpack a pre-trained model:
 ```
 $ tar -jxf flower-model.tar.bz2
 $ ls flower-model
-flower-recognition-0040.params  pic0.ndarray  pic101.ndarray  pic32.ndarray  pic86.ndarray  pic98.ndarray
-flower-recognition-symbol.json  pic1.ndarray  pic23.ndarray   pic78.ndarray  pic91.ndarray  synset.txt
+flower-1.jpg                   flower-4.jpg                   flower-recognition-symbol.json
+flower-2.jpg                   flower-5.jpg                   synset.txt
+flower-3.jpg                   flower-recognition-0040.params
 ```
-File `flower-recognition-symbol.json` contains the `ResNet50 V2` model. File `flower-recognition-0040.params` contains the parameters for the model to identify 102 types of flowers. File `synset.txt` contains the name of the 102 flowers, in the order corresponding to the output layer of the model. Files with name 'picx.ndarray' are flower pictures converted into ndarray format.
+File `flower-recognition-symbol.json` contains the `ResNet50 V2` model. File `flower-recognition-0040.params` contains the parameters for the model to identify 102 types of flowers. File `synset.txt` contains the name of the 102 flowers, in the order corresponding to the output layer of the model. The jpg files are example flower photos we download from google image search.
 
 Since the service we just started does not contain any model at the beginning, let's install the flower model by issuing the following command in the client terminal:
 ```
 $ ../../build/src/sospdemo
-Usage:../../build/src/sospdemo <mode> <mode specific args>
+Usage:./sospdemo <mode> <mode specific args>
 The mode could be one of the following:
     client - the web client.
     server - the server node. Configuration file determines if this is a categorizer tier node or a function tier server. 
 1) to start a server node:
-    ../../build/src/sospdemo server 
+    ./sospdemo server 
 2) to perform inference: 
-    ../../build/src/sospdemo client inference <tags> <photo>
+    ./sospdemo client <function-tier-node> inference <tags> <photo>
     tags could be a single tag or multiple tags like 1,2,3,...
 3) to install a model: 
-    ../../build/src/sospdemo client installmodel <tag> <synset> <symbol> <params>
+    ./sospdemo client <function-tier-node> installmodel <tag> <synset> <symbol> <params>
 4) to remove a model: 
-    ../../build/src/sospdemo client removemodel <tag>
-$ ../../build/src/sospdemo client installmodel 1 flower-model/synset.txt flower-model/flower-recognition-symbol.json flower-model/flower-recognition-0040.params 
-Use function tier node: 127.0.0.1:28001
+    ./sospdemo client <function-tier-node> removemodel <tag>
+$ ../../build/src/sospdemo client 127.0.0.1:28000 installmodel 1 flower-model/synset.txt flower-model/flower-recognition-symbol.json flower-model/flower-recognition-0040.params 
+Use function tier node: 127.0.0.1:28000
 return code:0
 description:install model successfully.
 ```
@@ -122,10 +127,9 @@ Please note that it's up to the user which tag to assign to a model.
 
 Now, we can do the inference as following:
 ```
-$ ../../build/src/sospdemo client inference 1 pic91.ndarray
-Use function tier node: 127.0.0.1:28001
-photo description:tiger lily
-
+$ ../../build/src/sospdemo client 127.0.0.1:28000 inference 1 flower-model/flower-1.jpg
+Use function tier node: 127.0.0.1:28000
+photo description:rose
 ```
 
 ## Explanation on the code
