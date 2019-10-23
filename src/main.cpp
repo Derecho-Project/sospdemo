@@ -358,29 +358,22 @@ void do_server(int argc, char** argv) {
     uint32_t categorizer_tier_min_nodes = derecho::getConfUInt32(CONF_SOSPDEMO_CATEGORIZER_TIER_MIN_NODES);
     uint32_t categorizer_tier_max_nodes = derecho::getConfUInt32(CONF_SOSPDEMO_CATEGORIZER_TIER_MAX_NODES);
 
-    std::vector<int> categorizer_tier_min_nodes_by_shard(categorizer_tier_num_shard,static_cast<int>(categorizer_tier_min_nodes));
-    std::vector<int> categorizer_tier_max_nodes_by_shard(categorizer_tier_num_shard,static_cast<int>(categorizer_tier_max_nodes));
-    std::vector<derecho::Mode> categorizer_tier_delivery_modes_by_shard(categorizer_tier_num_shard,derecho::Mode::ORDERED);
-    std::vector<std::string> categorizer_tier_profiles_by_shard(categorizer_tier_num_shard,"CATEGORIZER_TIER");
-
     derecho::SubgroupInfo si {derecho::DefaultSubgroupAllocator({
         {
             std::type_index(typeid(sospdemo::FunctionTier)),
-            derecho::one_subgroup_policy(derecho::custom_shards_policy(
-                {static_cast<int>(function_tier_min_nodes)}, // minimum number of nodes in the single shard of function tier subgroup
-                {static_cast<int>(function_tier_max_nodes)}, // maximum number of nodes in the single shard of function tier subgroup
-                {derecho::Mode::UNORDERED}, // No ordered send required in the function tier subgroup
-                {"FUNCTION_TIER"}) // use the "FUNCTION_TIER" subgroup configuration.
-            )
+              derecho::one_subgroup_policy(derecho::flexible_even_shards(
+                1, // number of shards in function tier subgroup
+                static_cast<int>(function_tier_min_nodes), // minimum number of nodes in the single shard of function tier subgroup
+                static_cast<int>(function_tier_max_nodes), // maximum number of nodes in the single shard of function tier subgroup
+                "FUNCTION_TIER"))
         },
         {
             std::type_index(typeid(sospdemo::CategorizerTier)),
-            derecho::one_subgroup_policy(derecho::custom_shards_policy(
-                categorizer_tier_min_nodes_by_shard,
-                categorizer_tier_max_nodes_by_shard,
-                categorizer_tier_delivery_modes_by_shard,
-                categorizer_tier_profiles_by_shard)
-            )
+              derecho::one_subgroup_policy(derecho::flexible_even_shards(
+                static_cast<int>(categorizer_tier_num_shard), // number of shards in categorizer tier subgroup
+                static_cast<int>(categorizer_tier_min_nodes), // minimum number of nodes in the single shard of categorizer tier subgroup
+                static_cast<int>(categorizer_tier_max_nodes), // minimum number of nodes in the single shard of categorizer tier subgroup
+                "CATEGORIZER_TIER"))
         }
     })};
 
