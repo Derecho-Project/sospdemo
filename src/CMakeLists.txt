@@ -59,7 +59,7 @@ set(FUNCTION_TIER_PROTO_HDRS ${FUNCTION_TIER_PB_H_FILE} ${FUNCTION_TIER_GRPC_PB_
 set(FUNCTION_TIER_PROTO_SRCS ${FUNCTION_TIER_PB_CPP_FILE} ${FUNCTION_TIER_GRPC_PB_CPP_FILE})
 
 
-add_executable(sospdemo main.cpp function_tier.cpp categorizer_tier.cpp blob.cpp ${FUNCTION_TIER_PROTO_SRCS} ${FUNCTION_TIER_PROTO_HDRS})
+add_executable(sospdemo main.cpp function_tier.cpp categorizer_tier.cpp blob.cpp client_logic.cpp inference_engine.cpp server_logic.cpp ${FUNCTION_TIER_PROTO_SRCS} ${FUNCTION_TIER_PROTO_HDRS})
 target_include_directories(sospdemo PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
