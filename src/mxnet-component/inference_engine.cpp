@@ -1,8 +1,8 @@
 #include <derecho-component/categorizer_tier.hpp>
 #include <mxnet-component/inference_engine.hpp>
+#include <mxnet-component/utils.hpp>
 #include <mxnet-cpp/MxNetCpp.h>
 #include <opencv2/opencv.hpp>
-#include <mxnet-component/utils.hpp>
 #include <vector>
 
 #ifndef NDEBUG
