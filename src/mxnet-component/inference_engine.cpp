@@ -1,8 +1,8 @@
-#include <categorizer_tier.hpp>
-#include <inference_engine.hpp>
+#include <derecho-component/categorizer_tier.hpp>
+#include <mxnet-component/inference_engine.hpp>
+#include <mxnet-component/utils.hpp>
 #include <mxnet-cpp/MxNetCpp.h>
 #include <opencv2/opencv.hpp>
-#include <utils.hpp>
 #include <vector>
 
 #ifndef NDEBUG
@@ -89,6 +89,7 @@ InferenceEngine::InferenceEngine(Model &model)
       input_shape(std::vector<mxnet::cpp::index_t>({1, 3, 224, 224})) {
   if (load_model(model) != 0) {
     std::cerr << "Failed to load model." << std::endl;
+    throw ModelLoadException{};
   }
 }
 

@@ -1,4 +1,4 @@
-#include <blob.hpp>
+#include <derecho-component/blob.hpp>
 
 namespace sospdemo {
 // BlobWrapper implementation

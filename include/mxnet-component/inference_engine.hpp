@@ -1,6 +1,6 @@
 #pragma once
 
-#include <blob.hpp>
+#include <derecho-component/blob.hpp>
 #include <derecho/core/derecho.hpp>
 #include <derecho/mutils-serialization/SerializationSupport.hpp>
 #include <mxnet-cpp/MxNetCpp.h>
@@ -14,6 +14,7 @@ namespace sospdemo {
 /**
  * The back end subgroup type
  */
+
 class Photo : public mutils::ByteRepresentable {
 public:
   uint32_t tag;
@@ -40,6 +41,9 @@ public:
 /**
  * The raw model data
  */
+
+struct ModelLoadException {};
+
 struct Model : public mutils::ByteRepresentable {
   ssize_t synset_size;
   ssize_t symbol_size;
