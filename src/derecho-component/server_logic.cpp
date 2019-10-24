@@ -1,15 +1,8 @@
 #include <derecho-component/categorizer_tier.hpp>
-#include <grpc-component/client_logic.hpp>
-#include <derecho/core/derecho.hpp>
-#include <fcntl.h>
 #include <derecho-component/function_tier.hpp>
+#include <derecho/core/derecho.hpp>
 #include <iostream>
 #include <derecho-component/server_logic.hpp>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <mxnet-component/utils.hpp>
-#include <vector>
 
 /**
  * Start a server node
