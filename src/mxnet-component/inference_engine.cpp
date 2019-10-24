@@ -96,10 +96,6 @@ int InferenceEngine::load_model(const Model &model)
   return 0;
 }
 
-struct ModelLoadException
-{
-};
-
 InferenceEngine::InferenceEngine(Model &model)
     : global_ctx(mxnet::cpp::Context::cpu()),
       input_shape(std::vector<mxnet::cpp::index_t>({1, 3, 224, 224}))

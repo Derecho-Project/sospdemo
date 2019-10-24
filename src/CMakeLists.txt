@@ -59,11 +59,7 @@ set(FUNCTION_TIER_PROTO_HDRS ${FUNCTION_TIER_PB_H_FILE} ${FUNCTION_TIER_GRPC_PB_
 set(FUNCTION_TIER_PROTO_SRCS ${FUNCTION_TIER_PB_CPP_FILE} ${FUNCTION_TIER_GRPC_PB_CPP_FILE})
 
 
-<<<<<<< HEAD
-add_executable(sospdemo main.cpp derecho-component/function_tier.cpp derecho-component/categorizer_tier.cpp derecho-component/blob.cpp grpc-component/client_logic.cpp mxnet-component/inference_engine.cpp derecho-component/server_logic.cpp ${FUNCTION_TIER_PROTO_SRCS} ${FUNCTION_TIER_PROTO_HDRS})
-=======
 add_executable(sospdemo main.cpp derecho-component/function_tier.cpp derecho-component/categorizer_tier.cpp derecho-component/blob.cpp grpc-component/client_logic.cpp grpc-component/function_tier-grpc.cpp mxnet-component/inference_engine.cpp derecho-component/server_logic.cpp ${FUNCTION_TIER_PROTO_SRCS} ${FUNCTION_TIER_PROTO_HDRS})
->>>>>>> 4677755cc3b3b52bad3214520044e063cc731050
 target_include_directories(sospdemo PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
