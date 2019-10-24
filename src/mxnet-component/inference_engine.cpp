@@ -1,17 +1,19 @@
-#include <categorizer_tier.hpp>
-#include <inference_engine.hpp>
+#include <derecho-component/categorizer_tier.hpp>
+#include <mxnet-component/inference_engine.hpp>
 #include <mxnet-cpp/MxNetCpp.h>
 #include <opencv2/opencv.hpp>
-#include <utils.hpp>
+#include <mxnet-component/utils.hpp>
 #include <vector>
 
 #ifndef NDEBUG
 #include <fstream>
 #endif
 
-namespace sospdemo {
+namespace sospdemo
+{
 #ifndef NDEBUG
-void Model::dump_to_file() const {
+void Model::dump_to_file() const
+{
   // synset file
   std::fstream synset_fs("synset.dump",
                          synset_fs.binary | synset_fs.trunc | synset_fs.out);
@@ -34,8 +36,10 @@ void Model::dump_to_file() const {
   params_fs.close();
 }
 #endif
-int InferenceEngine::load_model(const Model &model) {
-  try {
+int InferenceEngine::load_model(const Model &model)
+{
+  try
+  {
     // 1 - load synset
     model.get_synset_vector(synset_vector);
 
@@ -46,11 +50,15 @@ int InferenceEngine::load_model(const Model &model) {
       // load parameters
       std::map<std::string, mxnet::cpp::NDArray> parameters;
       model.get_parameters_map(&parameters);
-      for (const auto &k : parameters) {
-        if (k.first.substr(0, 4) == "aux:") {
+      for (const auto &k : parameters)
+      {
+        if (k.first.substr(0, 4) == "aux:")
+        {
           auto name = k.first.substr(4, k.first.size() - 4);
           this->aux_map[name] = k.second.Copy(global_ctx);
-        } else if (k.first.substr(0, 4) == "arg:") {
+        }
+        else if (k.first.substr(0, 4) == "arg:")
+        {
           auto name = k.first.substr(4, k.first.size() - 4);
           this->args_map[name] = k.second.Copy(global_ctx);
         }
@@ -73,10 +81,14 @@ int InferenceEngine::load_model(const Model &model) {
       i = mxnet::cpp::OpReqType::kNullOp;
     this->executor_pointer.reset(new mxnet::cpp::Executor(
         net, global_ctx, arg_arrays, grad_arrays, grad_reqs, aux_arrays));
-  } catch (const std::exception &e) {
+  }
+  catch (const std::exception &e)
+  {
     std::cerr << "Load model failed with exception " << e.what() << std::endl;
     return -1;
-  } catch (...) {
+  }
+  catch (...)
+  {
     std::cerr << "Load model failed with unknown exception." << std::endl;
     return -1;
   }
@@ -84,19 +96,28 @@ int InferenceEngine::load_model(const Model &model) {
   return 0;
 }
 
+struct ModelLoadException
+{
+};
+
 InferenceEngine::InferenceEngine(Model &model)
     : global_ctx(mxnet::cpp::Context::cpu()),
-      input_shape(std::vector<mxnet::cpp::index_t>({1, 3, 224, 224})) {
-  if (load_model(model) != 0) {
+      input_shape(std::vector<mxnet::cpp::index_t>({1, 3, 224, 224}))
+{
+  if (load_model(model) != 0)
+  {
     std::cerr << "Failed to load model." << std::endl;
+    throw ModelLoadException{};
   }
 }
 
-InferenceEngine::~InferenceEngine() {
+InferenceEngine::~InferenceEngine()
+{
   // clean up the mxnet engine.
 }
 
-Guess InferenceEngine::inference(const Photo &photo) {
+Guess InferenceEngine::inference(const Photo &photo)
+{
   Guess guess;
   std::vector<unsigned char> decode_buf(photo.photo_data.size);
   std::memcpy(static_cast<void *>(decode_buf.data()),
@@ -106,9 +127,12 @@ Guess InferenceEngine::inference(const Photo &photo) {
   std::vector<mx_float> array;
   // transform to fit 3x224x224 input layer
   cv::resize(mat, mat, cv::Size(256, 256));
-  for (int c = 0; c < 3; c++) {       // channels GBR->RGB
-    for (int i = 0; i < 224; i++) {   // height
-      for (int j = 0; j < 224; j++) { // width
+  for (int c = 0; c < 3; c++)
+  { // channels GBR->RGB
+    for (int i = 0; i < 224; i++)
+    { // height
+      for (int j = 0; j < 224; j++)
+      { // width
         int _i = i + 16;
         int _j = j + 16;
         array.push_back(
@@ -125,8 +149,10 @@ Guess InferenceEngine::inference(const Photo &photo) {
   auto output_shape = executor_pointer->outputs[0].GetShape();
   mx_float max = -1e10;
   int idx = -1;
-  for (unsigned int jj = 0; jj < output_shape[1]; jj++) {
-    if (max < executor_pointer->outputs[0].At(0, jj)) {
+  for (unsigned int jj = 0; jj < output_shape[1]; jj++)
+  {
+    if (max < executor_pointer->outputs[0].At(0, jj))
+    {
       max = executor_pointer->outputs[0].At(0, jj);
       idx = static_cast<int>(jj);
     }

@@ -1,8 +1,8 @@
 #pragma once
-#include <blob.hpp>
+#include <derecho-component/blob.hpp>
 #include <derecho/core/derecho.hpp>
 #include <derecho/mutils-serialization/SerializationSupport.hpp>
-#include <inference_engine.hpp>
+#include <mxnet-component/inference_engine.hpp>
 #include <mxnet-cpp/MxNetCpp.h>
 #include <mxnet-cpp/initializer.h>
 #include <mxnet/c_api.h>

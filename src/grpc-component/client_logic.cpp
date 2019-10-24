@@ -1,13 +1,13 @@
-#include <categorizer_tier.hpp>
-#include <client_logic.hpp>
+#include <derecho-component/categorizer_tier.hpp>
+#include <grpc-component/client_logic.hpp>
 #include <derecho/core/derecho.hpp>
 #include <fcntl.h>
-#include <function_tier.hpp>
+#include <derecho-component/function_tier.hpp>
 #include <iostream>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <utils.hpp>
+#include <mxnet-component/utils.hpp>
 #include <vector>
 
 /**

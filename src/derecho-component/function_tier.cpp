@@ -1,7 +1,7 @@
-#include <blob.hpp>
-#include <categorizer_tier.hpp>
-#include <function_tier.hpp>
-#include <utils.hpp>
+#include <derecho-component/blob.hpp>
+#include <derecho-component/categorizer_tier.hpp>
+#include <derecho-component/function_tier.hpp>
+#include <mxnet-component/utils.hpp>
 
 namespace sospdemo {
 
