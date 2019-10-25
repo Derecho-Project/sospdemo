@@ -9,7 +9,7 @@ We assume your OS is Ubuntu 18.04.
 This demo is built with [Derecho](https://github.com/Derecho-Project/derecho/tree/sospdemo) [gRPC](https://grpc.io/) (for client-server communication), and [MXNet](https://mxnet.apache.org/) (for inference using CNN models).
 
 ### 1. Derecho
-Please follow the installation instruction on the [Derecho project page](https://github.com/Derecho-Project/derecho/tree/sospdemo).
+Please follow the installation instructions on the [Derecho project page](https://github.com/Derecho-Project/derecho/tree/sospdemo), with one addendum: you'll need to be on the `sospdemo` branch.  
 
 ### 2. gRPC
 We have only tested this demo with gRPC v1.20.0, but it should also work with other gRPC versions. You can install this version with the following commands:
@@ -48,14 +48,9 @@ $ cd ../..
 ## Build
 Once you have all the prerequisites built, building the demo is straight-forward.
 ```
-$ [sudo] apt install -y git-lfs
-$ git lfs install
 $ git clone https://github.com/Derecho-Project/sospdemo
 $ cd sospdemo
 $ mkdir build;cd build
-```
-Please note that you need to use the same cmake build mode (`Debug` or `Release`) for this demo as you used for Derecho. We will remove this limitation in the next updates of Derecho. Assume you installled Derecho in `Release` mode:
-```
 $ cmake -DCMAKE_BUILD_TYPE=Release ..
 $ make -j `nproc`
 $ cd ..
@@ -63,9 +58,9 @@ $ cd ..
 Then, you should see the binary `build/src/sospdemo` is built. This binary includes both the client and server.
 
 ## Run the demo
-We pre-deployed a demo setup with four Derecho nodes (two function tier nodes and two categorizer tier nodes) running on your local host. The folders `test/n0` to `test/n3` contain the configuration for node id 0-3 respectively. Start by opening four terminals and `cd` to each of those configuration folders (tip: `tmux` or `screen` helps a lot). To start the service, run the following command in each of the terminals:
+We pre-deployed a demo setup with N Derecho nodes (half function tier nodes and half categorizer tier nodes) running on your local host. The folders `test-N-nodes/n?` contain the configuration for node id 0 through N-1.  We've created this directory structure for 2, 4, and 6 nodes.  As Derecho can be somewhat resource-intensive, we recommend starting with the 2 node case.  Start by opening N terminals and `cd` to each of those configuration folders (tip: `tmux` or `screen` helps a lot). To start the service, run the following command in each of the terminals:
 ```
-$ ../build/src/sospdemo server
+$ ../../build/src/sospdemo server
 ```
 This command will start a Derecho node in either the function or the categorizer tier, depending on the configuration. Once all nodes have started, the group is active and you should see the following outputs.
 
