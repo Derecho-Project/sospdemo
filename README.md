@@ -126,6 +126,3 @@ $ ../../build/src/sospdemo client 127.0.0.1:28000 inference 1 flower-model/flowe
 Use function tier node: 127.0.0.1:28000
 photo description:rose
 ```
-
-## Explanation on the code
-TODO.
