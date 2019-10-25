@@ -14,7 +14,7 @@ void do_server(int argc, char **argv)
 
   // 1 - create subgroup info using the default subgroup allocator function
   // Both the function tier and the categorizer tier subgroups have one shard,
-  // with two members in each shard,respectively.
+  // with two members in each shard, respectively.
 
   derecho::SubgroupInfo si{derecho::DefaultSubgroupAllocator(
       {{std::type_index(typeid(sospdemo::FunctionTier)),
@@ -34,9 +34,9 @@ void do_server(int argc, char **argv)
   derecho::Group<sospdemo::FunctionTier, sospdemo::CategorizerTier> group(
       {}, si, nullptr, std::vector<derecho::view_upcall_t>{},
       function_tier_factory, categorizer_tier_factory);
-  std::cout << "Finished constructing derecho group." << std::endl;
+  std::cout << "Finished constructing Derecho group." << std::endl;
 
-  // 4 - waiting for an input to leave
+  // 4 - block the main thread and wait for keyboard input to shut down
   std::cout << "Press ENTER to stop." << std::endl;
   std::cin.get();
   group.barrier_sync();
