@@ -93,10 +93,9 @@ Status FunctionTier::Whatsthis(ServerContext* context,
     }
 }
 
-Status
-FunctionTier::InstallModel(grpc::ServerContext* context,
-                           grpc::ServerReader<InstallModelRequest>* reader,
-                           ModelReply* reply) {
+Status FunctionTier::InstallModel(grpc::ServerContext* context,
+                                  grpc::ServerReader<InstallModelRequest>* reader,
+                                  ModelReply* reply) {
     try {
         auto parsed_args = parse_grpc_install_args(context, reader, reply);
         const uint32_t tag = parsed_args.tag;

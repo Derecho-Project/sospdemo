@@ -31,8 +31,7 @@ void do_server(int argc, char** argv) {
 
     // 3 - create the group
     derecho::Group<sospdemo::FunctionTier, sospdemo::CategorizerTier> group(
-            {}, si, nullptr, std::vector<derecho::view_upcall_t>{},
-            function_tier_factory, categorizer_tier_factory);
+            si, function_tier_factory, categorizer_tier_factory);
     std::cout << "Finished constructing Derecho group." << std::endl;
 
     // 4 - block the main thread and wait for keyboard input to shut down
