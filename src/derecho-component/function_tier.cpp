@@ -11,46 +11,79 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
+static void debug_target_valid(
+        derecho::ExternalCaller<CategorizerTier>& categorizer_tier_handler,
+        node_id_t target) {
+#ifndef NDEBUG
+    std::cout << "get the handle of categorizer tier subgroup. external caller "
+                 "is valid:"
+              << categorizer_tier_handler.is_valid() << std::endl;
+    std::cout << "p2p_send using target = " << target << std::endl;
+    std::cout.flush();
+#endif
+}
+
 Status FunctionTier::Whatsthis(ServerContext* context,
                                grpc::ServerReader<PhotoRequest>* reader,
                                PhotoReply* reply) {
     try {
-        auto parsed_args = parse_grpc_whatsthis_args(context, reader, reply);
-        uint32_t tag = parsed_args.tag;
-        uint32_t photo_size = parsed_args.photo_size;
-        char* photo_data = parsed_args.photo_data;
-        // 2 - pass it to the categorizer tier.
-        derecho::ExternalCaller<CategorizerTier>& categorizer_tier_handler = group->get_nonmember_subgroup<CategorizerTier>();
+        //retrieve subgroup handler for this call
+        derecho::ExternalCaller<CategorizerTier>&
+                categorizer_tier_handler
+                = group->get_nonmember_subgroup<CategorizerTier>();
+
+        //get list of shards for this subgroup
         auto shards = group->get_subgroup_members<CategorizerTier>();
-        node_id_t target = shards[tag % shards.size()][0];
-        // TODO: add randomness for load-balancing.
+        auto parsed_args = parse_grpc_whatsthis_args(context, reader, reply);
 
+        //We might want to ask more than one shard to identify our image.
+        //We'll store all their responses in this vector
+        using response_pair = std::pair<derecho::rpc::QueryResults<Guess>, node_id_t>;
+        std::vector<response_pair> responses;
+        if(parsed_args.tags.size() > 1) {
+            /**
+    // TODO: implement support for multiple tags.
+    // hint: the else branch of this conditional looks like it'd make a good body for a for-loop.
+    // Why not loop over the parsed_args.tags array?
+    **/
+            reply->set_desc("Multiple tags support to be implmemented.");
+            return Status::OK;
+        } else {
+            std::size_t tag_index = 0;
+            // 2 - pass it to the categorizer tier.
+            node_id_t target = shards[parsed_args.tags[tag_index] % shards.size()][0];
+            // TODO: add randomness for load-balancing.         ^^^^^^^
+            debug_target_valid(categorizer_tier_handler, target);  //(just for debugging)
+            // 3 - post it to the categorizer tier
+            responses.emplace_back(
+                    categorizer_tier_handler.p2p_send<RPC_NAME(inference)>(
+                            target,
+                            Photo{parsed_args.tags[tag_index], parsed_args.photo_data, parsed_args.photo_size}),
+                    target);
 #ifndef NDEBUG
-        std::cout << "get the handle of categorizer tier subgroup. external caller "
-                     "is valid:"
-                  << categorizer_tier_handler.is_valid() << std::endl;
-        std::cout << "p2p_send using target = " << target << std::endl;
-        std::cout.flush();
+            std::cout << "p2p_send for inference returns." << std::endl;
+            std::cout.flush();
 #endif
+        }
 
-        // 3 - post it to the categorizer tier
-        BlobWrapper photo_data_wrapper(photo_data, photo_size);
-        Photo photo(tag, photo_data_wrapper);
-        derecho::rpc::QueryResults<Guess> result = categorizer_tier_handler.p2p_send<RPC_NAME(inference)>(target, photo);
+        //Time to wait for (and process) the responses
+        std::vector<Guess> guesses;
+        for(auto& result : responses) {
+            guesses.emplace_back(result.first.get().get(result.second));
 #ifndef NDEBUG
-        std::cout << "p2p_send for inference returns." << std::endl;
-        std::cout.flush();
+            std::cout << "response from the categorizer tier is received with ret = "
+                      << guesses.back().guess << "." << std::endl;
+            std::cout.flush();
 #endif
-        Guess ret = result.get().get(target);
-
-#ifndef NDEBUG
-        std::cout << "response from the categorizer tier is received with ret = "
-                  << ret.guess << "." << std::endl;
-        std::cout.flush();
-#endif
+        }
 
         // 4 - return Status::OK;
-        reply->set_desc(ret.guess);
+        std::string reply_string = guesses.at(0).guess;
+        for(uint i = 1; i < guesses.size(); ++i) {
+            reply_string += " or " + guesses.at(i).guess;
+        }
+
+        reply->set_desc(reply_string);
 
         return Status::OK;
     } catch(const RequestCancel&) {
@@ -120,8 +153,9 @@ Status FunctionTier::RemoveModel(grpc::ServerContext* context,
     // currently, we use the one-shard implementation.
     derecho::ExternalCaller<CategorizerTier>& categorizer_tier_handler = group->get_nonmember_subgroup<CategorizerTier>();
     auto shards = group->get_subgroup_members<CategorizerTier>();
-    node_id_t target = shards[tag % shards.size()]
-                             [0];  // TODO: add randomness for load-balancing.
+    node_id_t target = shards[tag % shards.size()][0];
+    // TODO: add randomness for load-balancing.
+
 #ifndef NDEBUG
     std::cout << "get the handle of categorizer tier subgroup. external caller "
                  "is valid:"

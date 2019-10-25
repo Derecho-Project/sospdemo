@@ -1,8 +1,5 @@
-#include <derecho-component/blob.hpp>
-#include <derecho-component/categorizer_tier.hpp>
 #include <derecho-component/function_tier.hpp>
 #include <grpc-component/function_tier-grpc.hpp>
-#include <mxnet-component/utils.hpp>
 
 namespace sospdemo {
 
@@ -139,18 +136,10 @@ ParsedWhatsThisArguments parse_grpc_whatsthis_args(grpc::ServerContext* context,
     // 1.1 - read metadata
     PhotoRequest request;
     check_request(request, reader);
-    if(request.metadata().tags_size() > 1) {
-        /**
-    // TODO: implement support for multiple tags.
-    // hint: iterate through tags as follows
-    for (auto& tag: request.metadata().tags()) {
-         // send photo to a model corresponding to tag
+    std::vector<uint32_t> tags;
+    for(auto tag : request.metadata().tags()) {
+        tags.push_back(tag);
     }
-    **/
-        reply->set_desc("Multiple tags support to be implmemented.");
-        throw StatusOK{};
-    }
-    uint32_t tag = request.metadata().tags(0);
     uint32_t photo_size = request.metadata().photo_size();
     char* photo_data = (char*)malloc(photo_size);
     // 1.2 - read the photo file.
@@ -158,23 +147,23 @@ ParsedWhatsThisArguments parse_grpc_whatsthis_args(grpc::ServerContext* context,
     PhotoRequest::PhotoChunkCase (*chunk_case)(PhotoRequest&) =
             [](PhotoRequest& r) { return r.photo_chunk_case(); };
     read_data_arg(request, chunk_case, reader, photo_data, photo_size);
-    return ParsedWhatsThisArguments{tag, photo_size, photo_data};
+    return ParsedWhatsThisArguments{tags, photo_size, photo_data};
 }
 
 ParsedWhatsThisArguments::ParsedWhatsThisArguments(
-        const uint32_t tag,
+        std::vector<uint32_t> tags,
         const uint32_t photo_size,
-        char* photo_data) : tag(tag), photo_size(photo_size), photo_data(photo_data) {}
+        char* photo_data) : tags(tags), photo_size(photo_size), photo_data(photo_data) {}
 
 ParsedWhatsThisArguments::ParsedWhatsThisArguments(ParsedWhatsThisArguments&& o)
-        : tag(o.tag), photo_size(o.photo_size), photo_data(o.photo_data) {
+        : tags(o.tags), photo_size(o.photo_size), photo_data(o.photo_data) {
     o.photo_data = nullptr;
 }
 
 ParsedWhatsThisArguments::~ParsedWhatsThisArguments() {
 #ifndef NDEBUG
     std::cout << "What's this?" << std::endl;
-    std::cout << "tag = " << tag << std::endl;
+    std::cout << "tags = " << tags << std::endl;
     std::cout << "photo size = " << photo_size << std::endl;
     std::cout.flush();
 #endif  // NDEBUG

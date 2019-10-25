@@ -21,8 +21,11 @@ public:
     BlobWrapper photo_data;
 
     Photo() {}
-    Photo(uint32_t& _tag, BlobWrapper& _photo_data)
+    Photo(uint32_t& _tag, const BlobWrapper& _photo_data)
             : tag(_tag), photo_data(_photo_data) {}
+
+    Photo(uint32_t _tag, const char* const b, const std::size_t s)
+            : Photo(_tag, BlobWrapper{b, s}) {}
 
     DEFAULT_SERIALIZATION_SUPPORT(Photo, tag, photo_data);
 };

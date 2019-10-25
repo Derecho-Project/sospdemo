@@ -1,8 +1,5 @@
 #pragma once
-#include <derecho-component/blob.hpp>
-#include <derecho-component/categorizer_tier.hpp>
 #include <derecho-component/function_tier.hpp>
-#include <mxnet-component/utils.hpp>
 
 namespace sospdemo {
 class RequestCancel {
@@ -30,10 +27,10 @@ ParsedInstallArguments parse_grpc_install_args(grpc::ServerContext* context,
                                                ModelReply* reply);
 
 struct ParsedWhatsThisArguments {
-    const uint32_t tag;
+    const std::vector<uint32_t> tags;
     const uint32_t photo_size;
     char* photo_data;
-    ParsedWhatsThisArguments(const uint32_t tag,
+    ParsedWhatsThisArguments(std::vector<uint32_t> tags,
                              const uint32_t photo_size,
                              char* photo_data);
     ParsedWhatsThisArguments(const ParsedWhatsThisArguments&) = delete;
