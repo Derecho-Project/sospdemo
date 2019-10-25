@@ -6,14 +6,6 @@ BlobWrapper::BlobWrapper(const char* const b, const decltype(size) s) : bytes(b)
 
 BlobWrapper::BlobWrapper() : bytes(nullptr), size(0) {}
 
-std::size_t BlobWrapper::to_bytes(char* v) const {
-    ((std::size_t*)(v))[0] = size;
-    if(size > 0) {
-        memcpy(v + sizeof(size), bytes, size);
-    }
-    return size + sizeof(size);
-}
-
 std::size_t BlobWrapper::bytes_size() const {
     return size + sizeof(size);
 }
@@ -23,16 +15,21 @@ void BlobWrapper::post_object(const std::function<void(char const* const, std::s
     f(bytes, size);
 }
 
-mutils::context_ptr<BlobWrapper> BlobWrapper::from_bytes_noalloc(mutils::DeserializationManager* ctx, const char* const v, mutils::context_ptr<BlobWrapper>) {
-    return mutils::context_ptr<BlobWrapper>{from_bytes(ctx, v).release()};
+mutils::context_ptr<BlobWrapper> BlobWrapper::from_bytes_noalloc(mutils::DeserializationManager* ctx,
+                                                                 const char* const buffer,
+                                                                 mutils::context_ptr<BlobWrapper>) {
+    return mutils::context_ptr<BlobWrapper>{from_bytes(ctx, buffer).release()};
 }
 
-mutils::context_ptr<const BlobWrapper> BlobWrapper::from_bytes_noalloc_const(mutils::DeserializationManager* ctx, const char* const v, mutils::context_ptr<const BlobWrapper>) {
-    return mutils::context_ptr<const BlobWrapper>{from_bytes(ctx, v).release()};
+mutils::context_ptr<const BlobWrapper> BlobWrapper::from_bytes_noalloc_const(mutils::DeserializationManager* ctx,
+                                                                             const char* const buffer,
+                                                                             mutils::context_ptr<const BlobWrapper>) {
+    return mutils::context_ptr<const BlobWrapper>{from_bytes(ctx, buffer).release()};
 }
 
-std::unique_ptr<BlobWrapper> BlobWrapper::from_bytes(mutils::DeserializationManager*, const char* const v) {
-    return std::make_unique<BlobWrapper>(v + sizeof(std::size_t), ((std::size_t*)(v))[0]);
+std::unique_ptr<BlobWrapper> BlobWrapper::from_bytes(mutils::DeserializationManager*,
+                                                     const char* const buffer) {
+    return std::make_unique<BlobWrapper>(buffer + sizeof(std::size_t), ((std::size_t*)(buffer))[0]);
 }
 
 // Blob implementation
@@ -87,10 +84,10 @@ Blob& Blob::operator=(const Blob& other) {
     return *this;
 }
 
-std::size_t Blob::to_bytes(char* v) const {
-    ((std::size_t*)(v))[0] = size;
+std::size_t Blob::to_bytes(char* buffer) const {
+    ((std::size_t*)(buffer))[0] = size;
     if(size > 0) {
-        memcpy(v + sizeof(size), bytes, size);
+        memcpy(buffer + sizeof(size), bytes, size);
     }
     return size + sizeof(size);
 }
@@ -105,12 +102,14 @@ void Blob::post_object(const std::function<void(char const* const, std::size_t)>
 }
 
 // from_bytes_noalloc() implementation borrowed from mutils-serialization.
-mutils::context_ptr<Blob> Blob::from_bytes_noalloc(mutils::DeserializationManager* ctx, const char* const v, mutils::context_ptr<Blob>) {
-    return mutils::context_ptr<Blob>{from_bytes(ctx, v).release()};
+mutils::context_ptr<Blob> Blob::from_bytes_noalloc(mutils::DeserializationManager* ctx,
+                                                   const char* const buffer,
+                                                   mutils::context_ptr<Blob>) {
+    return mutils::context_ptr<Blob>{from_bytes(ctx, buffer).release()};
 }
 
-std::unique_ptr<Blob> Blob::from_bytes(mutils::DeserializationManager*, const char* const v) {
-    return std::make_unique<Blob>(v + sizeof(std::size_t), ((std::size_t*)(v))[0]);
+std::unique_ptr<Blob> Blob::from_bytes(mutils::DeserializationManager*, const char* const buffer) {
+    return std::make_unique<Blob>(buffer + sizeof(std::size_t), ((std::size_t*)(buffer))[0]);
 }
 
 }  // namespace sospdemo

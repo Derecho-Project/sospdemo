@@ -73,8 +73,7 @@ void read_data_arg(Request_Type& request,
             offset += request.file_data().size();
         }
         if(offset != data_size) {
-            std::cerr << "The size of received data (" << offset
-                      << " bytes) "
+            std::cerr << "The size of received data (" << offset << " bytes) "
                       << "does not match claimed (" << data_size << " bytes)."
                       << std::endl;
             throw - 3;
@@ -107,6 +106,14 @@ ParsedInstallArguments parse_grpc_install_args(grpc::ServerContext* context,
                                   data_size, model_data};
 }
 
+ParsedInstallArguments::ParsedInstallArguments()
+        : tag(0),
+          synset_size(0),
+          symbol_size(0),
+          params_size(0),
+          data_size(0),
+          model_data(nullptr) {}
+
 ParsedInstallArguments::ParsedInstallArguments(ParsedInstallArguments&& o)
         : tag(o.tag),
           synset_size(o.synset_size),
@@ -115,6 +122,19 @@ ParsedInstallArguments::ParsedInstallArguments(ParsedInstallArguments&& o)
           data_size(o.data_size),
           model_data(o.model_data) {
     o.model_data = nullptr;
+}
+
+ParsedInstallArguments& ParsedInstallArguments::operator=(ParsedInstallArguments&& o) {
+    tag = o.tag;
+    synset_size = o.synset_size;
+    symbol_size = o.symbol_size;
+    params_size = o.params_size;
+    data_size = o.data_size;
+    model_data = o.model_data;
+
+    o.model_data = nullptr;
+
+    return *this;
 }
 
 ParsedInstallArguments::~ParsedInstallArguments() {
@@ -150,14 +170,26 @@ ParsedWhatsThisArguments parse_grpc_whatsthis_args(grpc::ServerContext* context,
     return ParsedWhatsThisArguments{tags, photo_size, photo_data};
 }
 
+ParsedWhatsThisArguments::ParsedWhatsThisArguments() : tags({}), photo_size(0), photo_data(0) {}
+
 ParsedWhatsThisArguments::ParsedWhatsThisArguments(
         std::vector<uint32_t> tags,
         const uint32_t photo_size,
         char* photo_data) : tags(tags), photo_size(photo_size), photo_data(photo_data) {}
 
 ParsedWhatsThisArguments::ParsedWhatsThisArguments(ParsedWhatsThisArguments&& o)
-        : tags(o.tags), photo_size(o.photo_size), photo_data(o.photo_data) {
+        : tags(o.tags),
+          photo_size(o.photo_size),
+          photo_data(o.photo_data) {
     o.photo_data = nullptr;
+}
+
+ParsedWhatsThisArguments& ParsedWhatsThisArguments::operator=(ParsedWhatsThisArguments&& o) {
+    tags = std::move(o.tags);
+    photo_size = o.photo_size;
+    photo_data = o.photo_data;
+    o.photo_data = nullptr;
+    return *this;
 }
 
 ParsedWhatsThisArguments::~ParsedWhatsThisArguments() {

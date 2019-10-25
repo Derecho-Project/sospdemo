@@ -74,8 +74,8 @@ int CategorizerTier::install_model(const uint32_t& tag,
         }
     }
 #ifndef NDEBUG
-    std::cout << "Returning from CategorizerTier::install_model() with ret="
-              << ret << "." << std::endl;
+    std::cout << "Returning from CategorizerTier::install_model() with ret=" << ret << "."
+              << std::endl;
     std::cout.flush();
 #endif
     return ret;
@@ -88,8 +88,8 @@ int CategorizerTier::ordered_install_model(const uint32_t& tag,
                                            const BlobWrapper& model_data) {
     // validation
     if(raw_models.find(tag) != raw_models.end()) {
-        std::cerr << "install_model failed because tag (" << tag
-                  << ") has been taken." << std::endl;
+        std::cerr << "install_model failed because tag (" << tag << ") has been taken."
+                  << std::endl;
         return -1;
     }
 
@@ -98,12 +98,10 @@ int CategorizerTier::ordered_install_model(const uint32_t& tag,
     model.symbol_size = symbol_size;
     model.params_size = params_size;
     model.model_data = Blob(model_data.bytes, model_data.size);
-    raw_models.emplace(tag,
-                       model);  // TODO: recheck - unecessary copied is avoided?
+    raw_models.emplace(tag, model);
 #ifndef NDEBUG
-    std::cout
-            << "Returning from CategorizerTier::ordered_install_model() successfully."
-            << std::endl;
+    std::cout << "Returning from CategorizerTier::ordered_install_model() successfully."
+              << std::endl;
     std::cout.flush();
 #endif
     return 0;
@@ -131,7 +129,7 @@ int CategorizerTier::ordered_remove_model(const uint32_t& tag) {
     // remove from raw_model.
     auto model_search = raw_models.find(tag);
     if(model_search == raw_models.end()) {
-        std::cerr << "remove_model failed because tag (" << tag << ") is not taken."
+        std::cerr << "remove_model failed because tag (" << tag << ") is not installed."
                   << std::endl;
         return -1;
     }

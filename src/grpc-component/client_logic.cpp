@@ -11,10 +11,6 @@
 #include <vector>
 
 /**
- * client sends request to server node.
- */
-
-/**
  * validate a file for read.
  * @param filename
  * @return file size, negative number for invalid file
@@ -41,16 +37,15 @@ inline ssize_t validate_readable_file(const char* filename) {
  * @return number of bytes. Negative number for failure
  */
 template <typename RequestType>
-ssize_t
-file_uploader(const std::string& file, ssize_t length,
-              std::unique_ptr<grpc::ClientWriter<RequestType>>& writer) {
+ssize_t file_uploader(const std::string& file, ssize_t length,
+                      std::unique_ptr<grpc::ClientWriter<RequestType>>& writer) {
     int fd;
     void* file_data;
     const ssize_t chunk_size = (1ll << 15);  // 32K chunking size
 
     // open and map file
     if((fd = open(file.c_str(), O_RDONLY)) < 0) {
-        std::cerr << "failed to open file(" << file << ") in readonly mode with "
+        std::cerr << "Failed to open file(" << file << ") in readonly mode with "
                   << "error:" << strerror(errno) << "." << std::endl;
         return -1;
     }
@@ -58,14 +53,13 @@ file_uploader(const std::string& file, ssize_t length,
     if((file_data = mmap(nullptr, length, PROT_READ, MAP_PRIVATE | MAP_POPULATE,
                          fd, 0))
        == MAP_FAILED) {
-        std::cerr << "failed to map file(" << file << ") with "
+        std::cerr << "Failed to map file(" << file << ") with "
                   << "error:" << strerror(errno) << "." << std::endl;
         return -2;
     }
 
     // upload file
     ssize_t offset = 0;
-    // sospdemo::InstallModelRequest request;
     RequestType request;
 
     while((length - offset) > 0) {
@@ -119,19 +113,19 @@ void client_install_model(
     metadata.set_tag(tag);
     ssize_t synset_file_size = validate_readable_file(synset_file.c_str());
     if(synset_file_size < 0) {
-        std::cerr << "invalid model synset file:" << synset_file << std::endl;
+        std::cerr << "Invalid model synset file: " << synset_file << std::endl;
         return;
     }
     metadata.set_synset_size(static_cast<uint32_t>(synset_file_size));
     ssize_t symbol_file_size = validate_readable_file(symbol_file.c_str());
     if(symbol_file_size < 0) {
-        std::cerr << "invalid model symbol file:" << symbol_file << std::endl;
+        std::cerr << "Invalid model symbol file: " << symbol_file << std::endl;
         return;
     }
     metadata.set_symbol_size(static_cast<uint32_t>(symbol_file_size));
     ssize_t params_file_size = validate_readable_file(params_file.c_str());
     if(params_file_size < 0) {
-        std::cerr << "invalid model params file:" << params_file << std::endl;
+        std::cerr << "Invalid model params file: " << params_file << std::endl;
         return;
     }
     metadata.set_params_size(static_cast<uint32_t>(params_file_size));
@@ -140,7 +134,7 @@ void client_install_model(
     std::unique_ptr<grpc::ClientWriter<sospdemo::InstallModelRequest>> writer = stub_->InstallModel(&context, &reply);
     if(!writer->Write(request)) {
         request.release_metadata();
-        std::cerr << "fail to send install model metadata." << std::endl;
+        std::cerr << "Failed to send install model metadata. The stream has been closed." << std::endl;
         return;
     }
     request.release_metadata();
@@ -158,14 +152,14 @@ void client_install_model(
     grpc::Status status = writer->Finish();
 
     if(status.ok()) {
-        std::cerr << "return code:" << reply.error_code() << std::endl;
-        std::cerr << "description:" << reply.error_desc() << std::endl;
+        std::cerr << "Return code: " << reply.error_code() << std::endl;
+        std::cerr << "Description: " << reply.error_desc() << std::endl;
     } else {
-        std::cerr << "grpc::Status::error_code:" << status.error_code()
+        std::cerr << "grpc::Status::error_code: " << status.error_code()
                   << std::endl;
-        std::cerr << "grpc::Status::error_details:" << status.error_details()
+        std::cerr << "grpc::Status::error_details: " << status.error_details()
                   << std::endl;
-        std::cerr << "grpc::Status::error_message:" << status.error_message()
+        std::cerr << "grpc::Status::error_message: " << status.error_message()
                   << std::endl;
     }
 
@@ -178,9 +172,8 @@ void client_install_model(
  * @param tag - model tag
  * @param photo_file - photo file name
  */
-void client_inference(
-        std::unique_ptr<sospdemo::FunctionTierService::Stub>& stub_,
-        const std::string& tags, const std::string& photo_file) {
+void client_inference(std::unique_ptr<sospdemo::FunctionTierService::Stub>& stub_,
+                      const std::string& tags, const std::string& photo_file) {
     sospdemo::PhotoRequest request;
     sospdemo::PhotoRequest::PhotoMetadata metadata;
     sospdemo::PhotoReply reply;
@@ -188,7 +181,7 @@ void client_inference(
 
     ssize_t photo_file_size = validate_readable_file(photo_file.c_str());
     if(photo_file_size < 0) {
-        std::cerr << "invalid photo file:" << photo_file << std::endl;
+        std::cerr << "Invalid photo file: " << photo_file << std::endl;
         return;
     }
 
@@ -207,7 +200,7 @@ void client_inference(
     std::unique_ptr<grpc::ClientWriter<sospdemo::PhotoRequest>> writer = stub_->Whatsthis(&context, &reply);
     if(!writer->Write(request)) {
         request.release_metadata();
-        std::cerr << "fail to send inference metadata." << std::endl;
+        std::cerr << "Failed to send inference metadata. The stream has been closed." << std::endl;
         return;
     }
     request.release_metadata();
@@ -221,13 +214,13 @@ void client_inference(
     grpc::Status status = writer->Finish();
 
     if(status.ok()) {
-        std::cerr << "photo description:" << reply.desc() << std::endl;
+        std::cerr << "Photo description: " << reply.desc() << std::endl;
     } else {
-        std::cerr << "grpc::Status::error_code:" << status.error_code()
+        std::cerr << "grpc::Status::error_code: " << status.error_code()
                   << std::endl;
-        std::cerr << "grpc::Status::error_details:" << status.error_details()
+        std::cerr << "grpc::Status::error_details: " << status.error_details()
                   << std::endl;
-        std::cerr << "grpc::Status::error_message:" << status.error_message()
+        std::cerr << "grpc::Status::error_message: " << status.error_message()
                   << std::endl;
     }
 
@@ -251,20 +244,23 @@ void client_remove_model(
     grpc::Status status = stub_->RemoveModel(&context, request, &reply);
 
     if(status.ok()) {
-        std::cerr << "error code:" << reply.error_code() << std::endl;
-        std::cerr << "error description:" << reply.error_desc() << std::endl;
+        std::cerr << "Return code: " << reply.error_code() << std::endl;
+        std::cerr << "Description: " << reply.error_desc() << std::endl;
     } else {
-        std::cerr << "grpc::Status::error_code:" << status.error_code()
+        std::cerr << "grpc::Status::error_code: " << status.error_code()
                   << std::endl;
-        std::cerr << "grpc::Status::error_details:" << status.error_details()
+        std::cerr << "grpc::Status::error_details: " << status.error_details()
                   << std::endl;
-        std::cerr << "grpc::Status::error_message:" << status.error_message()
+        std::cerr << "grpc::Status::error_message: " << status.error_message()
                   << std::endl;
     }
 
     return;
 }
 
+/**
+ * The "main" method for client programs
+ */
 void do_client(int argc, char** argv) {
     // briefly check the arguments
     if(argc < 4 || std::string("client").compare(argv[1])) {
@@ -286,7 +282,7 @@ void do_client(int argc, char** argv) {
     // parse the command
     if(std::string("inference").compare(argv[3]) == 0) {
         if(argc < 6) {
-            std::cerr << "invalid inference command." << std::endl;
+            std::cerr << "Invalid inference command." << std::endl;
             print_help(argv[0]);
         } else {
             std::string photo_file(argv[5]);
@@ -294,7 +290,7 @@ void do_client(int argc, char** argv) {
         }
     } else if(std::string("installmodel").compare(argv[3]) == 0) {
         if(argc < 8) {
-            std::cerr << "invalid install model command." << std::endl;
+            std::cerr << "Invalid install model command." << std::endl;
             print_help(argv[0]);
         } else {
             uint32_t tag = static_cast<uint32_t>(std::atoi(argv[4]));
@@ -305,7 +301,7 @@ void do_client(int argc, char** argv) {
         }
     } else if(std::string("removemodel").compare(argv[3]) == 0) {
         if(argc < 5) {
-            std::cerr << "invalid remove model command." << std::endl;
+            std::cerr << "Invalid remove model command." << std::endl;
             print_help(argv[0]);
         } else {
             uint32_t tag = static_cast<uint32_t>(std::atoi(argv[4]));
